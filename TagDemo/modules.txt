@@ -1,0 +1,6 @@
+flask
+flask-sqlalchemy
+flask-wtf
+flask-babel
+SQLAlchemy
+SQLAlchemy-migrate
