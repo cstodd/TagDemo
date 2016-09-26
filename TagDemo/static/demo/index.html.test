@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Map Demo</title>
+		<link rel="stylesheet" type="text/css" href="../node_modules/leaflet/dist/leaflet.css">
+		<link rel="stylesheet" type="text/css" href="../node_modules/leaflet.markercluster/dist/MarkerCluster.css">
+		<link rel="stylesheet" type="text/css" href="../dist/global.css">
+	</head>
+	<body>
+		<div id="mapDemo"></div>
+
+		<script src="../node_modules/jquery/dist/jquery.min.js"></script>
+		<script src="../src/jquery.boilerplate.js"></script>
+		<script src="../node_modules/leaflet/dist/leaflet.js"></script>
+		<script src="../node_modules/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+		<script>
+
+			var map, markers;
+
+			$( function() {
+
+				//Extra map swag, make sure you can't drag the map tiles off of viewport
+				varMaxBounds = new L.LatLngBounds(new L.LatLng(89, -189), new L.LatLng(-89, 189));;
+
+				// initialize the map on the "map" div with a given center and zoom
+				map = L.map('mapDemo', {
+				    center: [0,0],
+				    zoom: 7,
+						maxBounds: varMaxBounds
+				});
+
+				L.tileLayer('https://api.mapbox.com/styles/v1/ryanguthridge/cipukhdq50002apktnwtp07i4/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1Ijoicnlhbmd1dGhyaWRnZSIsImEiOiJ3RjhQaUQ0In0.fEM-hTwdcCjvBvZxIPMX2g',{attribution: 'Mapbox TileLayer provided by Ryan Guthridge'}).addTo(map);
+
+				//How to add a single marker
+				//L.marker([50.5, 30.5]).addTo(map);
+
+				markers = L.markerClusterGroup({
+				    spiderfyOnMaxZoom: true,
+				    showCoverageOnHover: true,
+				    zoomToBoundsOnClick: true,
+						iconCreateFunction: function(cluster) {
+							return L.divIcon({ html: cluster.getChildCount(), className: 'markerClusterIcn', iconSize: L.point(30, 30) });
+				    }
+				});
+
+				function refresh() {
+
+						//Lets pretend we just did an AJAX call and this is the returned payload
+						var sampleData = {"fullPayload":[{"results":[{"geometry":{"location":{"lat":39.6600,"lng":-103.3536}}}],"tagId":"THR.T02.R01.S0002","lastUpdate":"2016-09-20T19:55:59.000Z","status":"OK"},
+						{"results":[{"geometry":{"location":{"lat":38.6600,"lng":-103.3536}}}],"tagId":"THR.T02.R01.S0002","lastUpdate":"2016-09-20T19:55:59.000Z","status":"OK"},
+						{"results":[{"geometry":{"location":{"lat":40.6600,"lng":-102.3536}}}],"tagId":"THR.T02.R01.S0002","lastUpdate":"2016-09-20T19:55:59.000Z","status":"OK"}
+						]};
+
+						buildMapMarkers(sampleData);
+
+						map.addLayer(markers);
+
+
+				    // make Ajax call here, inside the callback call:
+				    setTimeout(refresh, 30000);
+				    // ...
+				}
+
+				// initial call to fake Ajax
+				refresh();
+
+
+
+			} );
+
+			buildMapMarkers = function(sampleData){
+
+				//We could do a for loop, but this is cleaner, going to go through each and put it on the map
+				$(sampleData.fullPayload).each(function( index, value ) {
+
+					//Creating the popup element before binding it to the marker lets us put stuff into the popup, calling openpopup opens it automatically for us
+					//Yeah, yeah I know putting html in here is messy, but html templating is overkill for this demo
+					var tempPopUpContents = "<strong>Tag Id:</strong> " + value.tagId
+													+ "<br><strong>Status:</strong> " + value.status
+													+ "<br><small><strong>Last Update:</strong> " + value.lastUpdate
+													+ "<br><strong>Latitude:</strong> " + value.results[0].geometry.location.lat + " <strong>Longitude:</strong> " + value.results[0].geometry.location.lat
+													+ "</small>"
+
+					//Set the content to the popup before attaching it to the marker
+					var tempPopup = L.popup().setContent(tempPopUpContents);
+
+					//Create the marker, bind the popup, create the label and make sure it's perm, and add it to the map variable
+					markers.addLayer(L.marker([value.results[0].geometry.location.lat, value.results[0].geometry.location.lng]).bindTooltip(value.tagId, {permanent: true}).bindPopup(tempPopup));
+
+					//This is a little nice to have feature, it's going to autopan the center of the map to the latest marker created
+					map.panTo(new L.LatLng(value.results[0].geometry.location.lat, value.results[0].geometry.location.lng));
+
+				});
+			}
+		</script>
+	</body>
+</html>
